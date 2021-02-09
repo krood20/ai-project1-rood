@@ -14,6 +14,9 @@ import time
 
 #Graph object to contain different functions within it
 class Graph:
+    #graph --> full adjacency matrix of all vertices and their neighbor nodes
+    #vertices --> dict of all vertices (id, squaire id)
+    #edges --> dict of all edges (to, from, distance)
     def __init__(self, graph, vertices, edges):
         self.graph = graph
         self.vertices = vertices
@@ -102,7 +105,7 @@ class Graph:
 
                 return weight
 
-            #looping 
+            #looping over all neighbors looking for smallest weights
             neighbors = self.graph[node]
             for (neighbor_id, weight) in neighbors:
                 # if the current node isn't in both visited_not_inspected and visited_inspected
