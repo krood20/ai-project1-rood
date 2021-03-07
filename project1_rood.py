@@ -29,31 +29,33 @@ class Graph:
 
         #priority queue used to iterate over all of the vertexs
         pq = [(0, starting_vertex)]
-        while len(pq) > 0:
+        while(len(pq) > 0):
             #remove vertex and weight from pqueue --> only want each one to be start once
             current_distance, current_vertex = heapq.heappop(pq)
 
             #go to next iteration if not less than current distance to node
-            if current_distance > distances[current_vertex]:
+            if(current_distance > distances[current_vertex]):
                 continue
 
             #loop over each neighbor, looking for the minimum distance
             for neighbor, weight in self.graph[current_vertex]:
                 distance = current_distance + weight
 
-                # Only consider this new path if it's shorter
-                if distance < distances[neighbor]:
+                #Only consider this new path if it's shorter
+                if(distance < distances[neighbor]):
                     distances[neighbor] = distance
                     heapq.heappush(pq, (distance, neighbor))
 
         return distances[destination_vertex]
 
     # heuristic function --> using the squares as our conversion (stored in self.vertices)
-    def heuristic(self, node):
-        try:
-            return self.vertices[node]
-        except:
-            return 1
+    def heuristic(self, begin_node, terminal_node):
+        df = self.vertices
+        x = tuple(df.loc[df['vertex_id'] == begin_node]["square_id"])[0].zfill(2)
+        y = tuple(df.loc[df['vertex_id'] == terminal_node]["square_id"])[0].zfill(2)
+        
+        #treating 1st digit as x value, second digit as y and computing manhattan distance
+        return abs(int(x[0]) - int(y[0])) + abs(int(x[1]) - int(y[1]))
 
     def get_weight(self, node_list, node):
         for node_id, node_weight in node_list:
@@ -61,75 +63,72 @@ class Graph:
                 return node_weight
 
     def a_star_algorithm(self, start_node, stop_node):
-        # visited_not_inspected -->list of nodes which have been visited, but who's neighbors haven't all been inspected
-        # visited_inspected --> list of nodes which have been visited and who's neighbors have been inspected
-        visited_not_inspected = set([start_node])
-        visited_inspected = set([])
+        # not_inspected -->list of nodes which have been visited, but who's neighbors haven't all been inspected
+        # inspected --> list of nodes which have been visited and who's neighbors have been inspected
+        not_inspected = set([start_node])
+        inspected = set([])
 
-        # initialize graph
-        graph = {}
-        graph[start_node] = 0
+        #distances - current distances from start to all other nodes
+        distances = {}
+        distances[start_node] = 0
 
-        #initialize adjacency map of all nodes
+        #adjacency map of all nodes
         adjacency_map = {}
         adjacency_map[start_node] = start_node
 
         #loop while we still have nodes that have uninspected neighbors 
-        while(len(visited_not_inspected) > 0):
+        while(len(not_inspected) > 0):
             node = None
 
             # find a node with the lowest value for evaluation function
-            for vert in visited_not_inspected:
-                if(node == None or graph[vert] + self.heuristic(vert) < graph[node] + self.heuristic(node)):
+            for vert in not_inspected:
+                #Weed out vert that has the lowest heuristic value in unvisited (fringe) nodes
+                if(node == None or self.heuristic(vert, stop_node) < self.heuristic(node, stop_node)):
                     node = vert
 
             if(node == None):
                 print('No path exists...')
                 return None
 
-            # if the current node is the stop_node reconstruct path from stop_node to the start_node
+            # if the current node is the stop_node stop search,
+            # and reconstruct path from stop_node to the start_node
             if(node == stop_node):
                 reconst_path = []
-
-                while(adjacency_map[node] != node):
-                    reconst_path.append(node)
-                    node = adjacency_map[node]
-
                 reconst_path.append(start_node)
-                reconst_path.reverse()
+                reconst_path.append(node)
 
                 #get weight of path found
                 weight = 0
                 for i in range(0, len(reconst_path)-1):
+                    #TODO: Do I need to add the heuristic here?
                     weight += self.get_weight(self.graph[reconst_path[i]], reconst_path[i+1])
 
                 return weight
 
             #looping over all neighbors looking for smallest weights
             neighbors = self.graph[node]
-            for (neighbor_id, weight) in neighbors:
-                # if the current node isn't in both visited_not_inspected and visited_inspected
-                # add it to visited_not_inspected and note n as it's parent
-                if(neighbor_id not in visited_not_inspected and neighbor_id not in visited_inspected):
-                    visited_not_inspected.add(neighbor_id)
+            for (neighbor_id, neighbor_weight) in neighbors:
+                # if the current node isn't in both not_inspected and inspected
+                # add it to not_inspected and update parent
+                if(neighbor_id not in not_inspected and neighbor_id not in inspected):
+                    not_inspected.add(neighbor_id)
                     adjacency_map[neighbor_id] = node
-                    graph[neighbor_id] = graph[node] + weight
+                    distances[neighbor_id] = distances[node] + neighbor_weight
 
-                # otherwise, check if it's quicker to first visit n, then m
                 else:
-                    # update parent data and g data
-                    if(graph[neighbor_id] > graph[node] + weight):
-                        graph[neighbor_id] = graph[node] + weight
+                    #check if node plus neighbor weight is less than current neightbor weight
+                    if(distances[neighbor_id] > distances[node] + neighbor_weight):
+                        distances[neighbor_id] = distances[node] + neighbor_weight
                         adjacency_map[neighbor_id] = node
 
-                        # if node is in visited_inspected, move it to visited_not_inspected
-                        if(neighbor_id in visited_inspected):
-                            visited_inspected.remove(neighbor_id)
-                            visited_not_inspected.add(neighbor_id)
+                        #if node is in inspected, move it to not_inspected
+                        if(neighbor_id in inspected):
+                            inspected.remove(neighbor_id)
+                            not_inspected.add(neighbor_id)
 
-            # remove node from visited_not_inspected and add to visited_inspected --> all neighbors visited
-            visited_not_inspected.remove(node)
-            visited_inspected.add(node)
+            # remove node from not_inspected and add to inspected --> all neighbors visited
+            not_inspected.remove(node)
+            inspected.add(node)
 
         print('No path exists...')
         return None
