@@ -90,8 +90,7 @@ class Graph:
                 print('No path exists...')
                 return None
 
-            # if the current node is the stop_node stop search,
-            # and reconstruct path from stop_node to the start_node
+            # if the current node is the stop_node stop search, and reconstruct path from stop_node to the start_node
             if(node == stop_node):
                 reconst_path = []
                 reconst_path.append(start_node)
@@ -108,8 +107,7 @@ class Graph:
             #looping over all neighbors looking for smallest weights
             neighbors = self.graph[node]
             for (neighbor_id, neighbor_weight) in neighbors:
-                # if the current node isn't in both not_inspected and inspected
-                # add it to not_inspected and update parent
+                # if the current node isn't in both not_inspected and inspected add it to not_inspected and update parent
                 if(neighbor_id not in not_inspected and neighbor_id not in inspected):
                     not_inspected.add(neighbor_id)
                     adjacency_map[neighbor_id] = node
